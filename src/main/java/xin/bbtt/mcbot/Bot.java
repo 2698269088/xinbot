@@ -86,6 +86,19 @@ public class Bot {
         }
     }
 
+    /**
+     * 标记本次登录已完成，并唤醒等待连接结果的线程。
+     * 即使元插件未能识别出服务器类型（server 为 null），收到登录包也说明登录流程已经完成。
+     *
+     * @param server 识别出的服务器类型，未识别出时为 null
+     */
+    public void markLoginCompleted(Server server) {
+        CompletableFuture<Server> future = serverReadyFuture;
+        if (future != null) {
+            future.complete(server);
+        }
+    }
+
     public final Map<UUID, GameProfile> players = new ConcurrentHashMap<>();
     private final PacketListener packetListener = new PacketListener();
     private final ServerRecorder serverRecorder = new ServerRecorder();
@@ -266,7 +279,7 @@ public class Bot {
                 }
             }
         } finally {
-            if (serverReadyFuture.equals(readyFuture)) {
+            if (serverReadyFuture == readyFuture) {
                 serverReadyFuture = null;
             }
         }

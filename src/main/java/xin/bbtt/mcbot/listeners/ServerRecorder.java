@@ -44,16 +44,19 @@ public class ServerRecorder extends SessionAdapter {
             .getMetaPlugin()
             .getServer(loginPacket);
 
-        if (newServer == null) {
-            return;
+        if (newServer != null) {
+            bot.setServer(newServer);
+
+            bot.getPluginManager()
+                .events()
+                .callEvent(
+                    new ServerChangeEvent(newServer, oldServer)
+                );
         }
 
-        bot.setServer(newServer);
-
-        bot.getPluginManager()
-            .events()
-            .callEvent(
-                new ServerChangeEvent(newServer, oldServer)
-            );
+        // 修复：只要收到登录包就表示登录流程已完成，必须唤醒 Bot.connect() 中等待的线程。
+        // 连接普通服务器（如 127.0.0.1）时元插件无法识别出 Login/Game 类型会返回 null，
+        // 若此时不唤醒，连接会一直等待到超时并被误断开，导致频繁重连。
+        bot.markLoginCompleted(newServer);
     }
 }
